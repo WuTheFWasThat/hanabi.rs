@@ -1,5 +1,7 @@
 # Simulations of Hanabi strategies
 
+[![Join the chat at https://gitter.im/WuTheFWasThat/hanabi.rs](https://badges.gitter.im/WuTheFWasThat/hanabi.rs.svg)](https://gitter.im/WuTheFWasThat/hanabi.rs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Hanabi is a cooperative card game of incomplete information.
 Despite relatively [simple rules](https://boardgamegeek.com/article/10670613#10670613),
 the space of Hanabi strategies is quite interesting.
