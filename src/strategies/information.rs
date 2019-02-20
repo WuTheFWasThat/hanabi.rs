@@ -95,14 +95,19 @@ trait Question {
         self.acknowledge_answer(answer.value, hand_info, view);
     }
 }
-struct IsPlayable {
+
+type PropertyPredicate = fn(&BoardState, &Card) -> bool;
+struct CardHasProperty
+{
     index: usize,
+    property: PropertyPredicate,
 }
-impl Question for IsPlayable {
+impl Question for CardHasProperty
+{
     fn info_amount(&self) -> u32 { 2 }
     fn answer(&self, hand: &Cards, view: &OwnedGameView) -> u32 {
         let ref card = hand[self.index];
-        if view.get_board().is_playable(card) { 1 } else { 0 }
+        if (self.property)(view.get_board(), card) { 1 } else { 0 }
     }
     fn acknowledge_answer(
         &self,
@@ -113,12 +118,67 @@ impl Question for IsPlayable {
         let ref mut card_table = hand_info[self.index];
         let possible = card_table.get_possibilities();
         for card in &possible {
-            if view.get_board().is_playable(card) {
+            if (self.property)(view.get_board(), card) {
                 if answer == 0 { card_table.mark_false(card); }
             } else {
                 if answer == 1 { card_table.mark_false(card); }
             }
         }
+    }
+}
+fn q_is_playable(index: usize) -> CardHasProperty {
+    CardHasProperty {index, property: |board, card| board.is_playable(card)}
+}
+fn q_is_dead(index: usize) -> CardHasProperty {
+    CardHasProperty {index, property: |board, card| board.is_dead(card)}
+}
+
+struct AdditiveComboQuestion {
+    /// For some list of questions l, the question `AdditiveComboQuestion { questions : l }` asks:
+    /// "What is the first question in the list `l` that has a nonzero answer, and what is its
+    /// answer?"
+    /// If all questions in `l` have the answer `0`, this question has the answer `0` as well.
+    ///
+    /// It's named that way because the `info_amount` grows additively with the `info_amount`s of
+    /// the questions in `l`.
+    questions: Vec<Box<Question>>,
+}
+impl Question for AdditiveComboQuestion {
+    fn info_amount(&self) -> u32 {
+        self.questions.iter().map(|q| { q.info_amount() - 1 }).sum::<u32>() + 1
+    }
+    fn answer(&self, hand: &Cards, view: &OwnedGameView) -> u32 {
+        let mut toadd = 1;
+        for q in &self.questions {
+            let q_answer = q.answer(hand, view);
+            if q_answer != 0 {
+                return toadd + q_answer - 1;
+            }
+            toadd += q.info_amount() - 1;
+        }
+        assert!(toadd == self.info_amount());
+        0
+    }
+    fn acknowledge_answer(
+        &self,
+        mut answer: u32,
+        hand_info: &mut HandInfo<CardPossibilityTable>,
+        view: &OwnedGameView,
+    ) {
+        if answer == 0 {
+            answer = self.info_amount();
+        }
+        answer -= 1;
+        for q in &self.questions {
+            if answer < q.info_amount() - 1 {
+                q.acknowledge_answer(answer+1, hand_info, view);
+                return;
+            } else {
+                q.acknowledge_answer(0, hand_info, view);
+                answer -= q.info_amount() - 1;
+            }
+        }
+        assert!(answer == 0);
     }
 }
 
@@ -278,8 +338,13 @@ impl InformationPlayerStrategy {
         let known_playable = augmented_hand_info.iter().filter(|&&(_, _, p_play, _, _)| {
             p_play == 1.0
         }).collect::<Vec<_>>().len();
+        let known_dead = augmented_hand_info.iter().filter(|&&(_, _, _, p_dead, _)| {
+            p_dead == 1.0
+        }).collect::<Vec<_>>().len();
 
-        if known_playable == 0 {
+        if known_playable == 0 { // TODO: changing this to "if true {" slightly improves the three-player game and
+                                 // very slightly worsens the other cases. There probably is some
+                                 // other way to make this decision that's better in all cases.
             let mut ask_play = augmented_hand_info.iter()
                 .filter(|&&(_, _, p_play, p_dead, is_determined)| {
                     if is_determined { return false; }
@@ -289,7 +354,9 @@ impl InformationPlayerStrategy {
                 }).collect::<Vec<_>>();
             // sort by probability of play, then by index
             ask_play.sort_by(|&&(_, i1, p1, _, _), &&(_, i2, p2, _, _)| {
-                    // *higher* probabilities are better
+                    // It's better to include higher-probability-of-playability
+                    // cards into our combo question, since that maximizes our
+                    // chance of finding out about a playable card.
                     let result = p2.partial_cmp(&p1);
                     if result == None || result == Some(Ordering::Equal) {
                         i1.cmp(&i2)
@@ -298,9 +365,45 @@ impl InformationPlayerStrategy {
                     }
                 });
 
-
-            for &(_, i, _, _, _) in ask_play {
-                if add_question(&mut questions, &mut info_remaining, IsPlayable {index: i}) {
+            if view.board.num_players == 5 {
+                for &(_, i, _, _, _) in ask_play {
+                    if add_question(&mut questions, &mut info_remaining, q_is_playable(i)) {
+                        return questions;
+                    }
+                }
+            } else {
+                let mut rest_combo = AdditiveComboQuestion {questions: Vec::new()};
+                for &(_, i, _, _, _) in ask_play {
+                    if rest_combo.info_amount() < info_remaining {
+                        rest_combo.questions.push(Box::new(q_is_playable(i)));
+                    }
+                }
+                rest_combo.questions.reverse(); // It's better to put lower-probability-of-playability
+                                                // cards first: The difference only matters if we
+                                                // find a playable card, and conditional on that,
+                                                // it's better to find out about as many non-playable
+                                                // cards as possible.
+                if rest_combo.info_amount() < info_remaining && known_dead == 0 {
+                    let mut ask_dead = augmented_hand_info.iter()
+                        .filter(|&&(_, _, _, p_dead, _)| {
+                            p_dead > 0.0 && p_dead < 1.0
+                        }).collect::<Vec<_>>();
+                    // sort by probability of death, then by index
+                    ask_dead.sort_by(|&&(_, i1, _, d1, _), &&(_, i2, _, d2, _)| {
+                            let result = d2.partial_cmp(&d1);
+                            if result == None || result == Some(Ordering::Equal) {
+                                i1.cmp(&i2)
+                            } else {
+                                result.unwrap()
+                            }
+                        });
+                    for &(_, i, _, _, _) in ask_dead {
+                        if rest_combo.info_amount() < info_remaining {
+                            rest_combo.questions.push(Box::new(q_is_dead(i)));
+                        }
+                    }
+                }
+                if add_question(&mut questions, &mut info_remaining, rest_combo) {
                     return questions;
                 }
             }
@@ -869,6 +972,11 @@ impl PlayerStrategy for InformationPlayerStrategy {
             view.board.total_cards
             - (COLORS.len() * VALUES.len()) as u32
             - (view.board.num_players * view.board.hand_size);
+        let soft_discard_threshold = if view.board.num_players < 5 {
+            discard_threshold - 5
+        } else {
+            discard_threshold
+        }; // TODO something more principled.
 
         // make a possibly risky play
         // TODO: consider removing this, if we improve information transfer
@@ -900,7 +1008,7 @@ impl PlayerStrategy for InformationPlayerStrategy {
         let public_useless_indices = self.find_useless_cards(view, &self.get_my_public_info());
         let useless_indices = self.find_useless_cards(view, &private_info);
 
-        if view.board.discard_size() <= discard_threshold {
+        if view.board.discard_size() <= soft_discard_threshold {
             // if anything is totally useless, discard it
             if public_useless_indices.len() > 1 {
                 let info = self.get_hint_sum_info(public_useless_indices.len() as u32, view);
