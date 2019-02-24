@@ -451,18 +451,20 @@ pub trait GameView {
         }).is_some()
     }
 
-    fn can_see(&self, card: &Card) -> bool {
+    fn get_other_players(&self) -> Vec<Player> {
         self.get_board().get_players().filter(|&player| {
             player != self.me()
-        }).any(|player| {
+        }).collect()
+    }
+
+    fn can_see(&self, card: &Card) -> bool {
+        self.get_other_players().iter().any(|player| {
             self.has_card(&player, card)
         })
     }
 
     fn someone_else_can_play(&self) -> bool {
-        self.get_board().get_players().filter(|&player| {
-            player != self.me()
-        }).any(|player| {
+        self.get_other_players().iter().any(|player| {
             self.get_hand(&player).iter().any(|card| {
                 self.get_board().is_playable(card)
             })

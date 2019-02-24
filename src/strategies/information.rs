@@ -462,9 +462,7 @@ impl InformationPlayerStrategy {
     }
 
     fn get_hint_sum_info(&self, total_info: u32, view: &OwnedGameView) -> ModulusInformation {
-        view.get_board().get_players().filter(|&player| {
-            player != self.me
-        }).fold(
+        view.get_other_players().iter().fold(
             ModulusInformation::new(total_info, 0),
             |mut sum_info, player| {
                 let answer = self.get_hint_info_for_player(&player, total_info, view);
@@ -1008,24 +1006,15 @@ impl PlayerStrategy for InformationPlayerStrategy {
         let public_useless_indices = self.find_useless_cards(view, &self.get_my_public_info());
         let useless_indices = self.find_useless_cards(view, &private_info);
 
-        if view.board.discard_size() <= soft_discard_threshold {
-            // if anything is totally useless, discard it
-            if public_useless_indices.len() > 1 {
-                let info = self.get_hint_sum_info(public_useless_indices.len() as u32, view);
-                return TurnChoice::Discard(public_useless_indices[info.value as usize]);
-            } else if useless_indices.len() > 0 {
-                // TODO: have opponents infer that i knew a card was useless
-                // TODO: after that, potentially prefer useless indices that arent public
-                return TurnChoice::Discard(useless_indices[0]);
-            }
-        }
+        let will_hint =
+            if view.board.discard_size() <= soft_discard_threshold && useless_indices.len() > 0 { false }
+            // hinting is better than discarding dead cards
+            // (probably because it stalls the deck-drawing).
+            else if view.board.hints_remaining > 0 && view.someone_else_can_play() { true }
+            else { false };
 
-        // hinting is better than discarding dead cards
-        // (probably because it stalls the deck-drawing).
-        if view.board.hints_remaining > 0 {
-            if view.someone_else_can_play() {
-                return self.get_hint();
-            }
+        if will_hint {
+            return self.get_hint();
         }
 
         // if anything is totally useless, discard it
@@ -1033,6 +1022,8 @@ impl PlayerStrategy for InformationPlayerStrategy {
             let info = self.get_hint_sum_info(public_useless_indices.len() as u32, view);
             return TurnChoice::Discard(public_useless_indices[info.value as usize]);
         } else if useless_indices.len() > 0 {
+            // TODO: have opponents infer that i knew a card was useless
+            // TODO: after that, potentially prefer useless indices that arent public
             return TurnChoice::Discard(useless_indices[0]);
         }
 
