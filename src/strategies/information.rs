@@ -617,6 +617,33 @@ impl InformationPlayerStrategy {
         })
     }
 
+    fn update_noone_else_needs_hint(&mut self) {
+        // If it becomes public knowledge that someone_else_needs_hint() returns false,
+        // update accordingly.
+        for player in self.last_view.board.get_players() {
+            if player != self.last_view.board.player {
+                let knows_playable_card = self.get_player_public_info(&player).iter().any(|table| {
+                    table.probability_is_playable(self.last_view.get_board()) == 1.0
+                });
+                if !knows_playable_card {
+                    // If player doesn't know any playable cards, player doesn't have any playable
+                    // cards.
+                    let mut hand_info = self.take_public_info(&player);
+                    for ref mut card_table in hand_info.iter_mut() {
+                        let view = &self.last_view;
+                        let possible = card_table.get_possibilities();
+                        for card in &possible {
+                            if view.get_board().is_playable(card) {
+                                card_table.mark_false(card);
+                            }
+                        }
+                    }
+                    self.return_public_info(&player, hand_info);
+                }
+            }
+        }
+    }
+
     fn update_public_info_for_discard_or_play(
         &mut self,
         view: &BorrowedGameView,
@@ -1015,6 +1042,7 @@ impl PlayerStrategy for InformationPlayerStrategy {
         let public_useless_indices = self.find_useless_cards(view, &self.get_my_public_info());
         let useless_indices = self.find_useless_cards(view, &private_info);
 
+        // NOTE When changing this, make sure to keep the "discard" branch of update() up to date!
         let will_hint =
             if view.board.hints_remaining > 0 && self.someone_else_needs_hint() { true }
             else if view.board.discard_size() <= discard_threshold && useless_indices.len() > 0 { false }
@@ -1082,6 +1110,12 @@ impl PlayerStrategy for InformationPlayerStrategy {
                     self.update_from_hint_sum(ModulusInformation::new(
                         known_useless_indices.len() as u32, value as u32
                     ));
+                }
+                if self.last_view.board.hints_remaining > 0 {
+                    // TODO It would be more information-efficient to do this before the call to
+                    // update_from_hint_sum(). To do that, we would have to restructure decide()
+                    // as well.
+                    self.update_noone_else_needs_hint();
                 }
 
                 if let &TurnResult::Discard(ref card) = &turn_record.result {
