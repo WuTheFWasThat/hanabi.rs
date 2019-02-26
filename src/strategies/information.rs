@@ -603,6 +603,20 @@ impl InformationPlayerStrategy {
         info.update_for_hint(&hint.hinted, matches);
     }
 
+    fn someone_else_needs_hint(&self) -> bool {
+        // Does another player have a playable card, but doesn't know it?
+        let view = &self.last_view;
+        view.get_other_players().iter().any(|player| {
+            let has_playable_card = view.get_hand(&player).iter().any(|card| {
+                view.get_board().is_playable(card)
+            });
+            let knows_playable_card = self.get_player_public_info(&player).iter().any(|table| {
+                table.probability_is_playable(view.get_board()) == 1.0
+            });
+            has_playable_card && !knows_playable_card
+        })
+    }
+
     fn update_public_info_for_discard_or_play(
         &mut self,
         view: &BorrowedGameView,
@@ -970,11 +984,6 @@ impl PlayerStrategy for InformationPlayerStrategy {
             view.board.total_cards
             - (COLORS.len() * VALUES.len()) as u32
             - (view.board.num_players * view.board.hand_size);
-        let soft_discard_threshold = if view.board.num_players < 5 {
-            discard_threshold - 5
-        } else {
-            discard_threshold
-        }; // TODO something more principled.
 
         // make a possibly risky play
         // TODO: consider removing this, if we improve information transfer
@@ -1007,10 +1016,13 @@ impl PlayerStrategy for InformationPlayerStrategy {
         let useless_indices = self.find_useless_cards(view, &private_info);
 
         let will_hint =
-            if view.board.discard_size() <= soft_discard_threshold && useless_indices.len() > 0 { false }
+            if view.board.hints_remaining > 0 && self.someone_else_needs_hint() { true }
+            else if view.board.discard_size() <= discard_threshold && useless_indices.len() > 0 { false }
             // hinting is better than discarding dead cards
             // (probably because it stalls the deck-drawing).
             else if view.board.hints_remaining > 0 && view.someone_else_can_play() { true }
+            else if view.board.hints_remaining > 4 { true }
+            // this is the only case in which we discard a potentially useful card.
             else { false };
 
         if will_hint {
@@ -1026,10 +1038,6 @@ impl PlayerStrategy for InformationPlayerStrategy {
             // TODO: after that, potentially prefer useless indices that arent public
             return TurnChoice::Discard(useless_indices[0]);
         }
-
-        // NOTE: the only conditions under which we would discard a potentially useful card:
-        // - we have no known useless cards
-        // - there are no hints remaining OR nobody else can play
 
         // Play the best discardable card
         let mut compval = 0.0;
