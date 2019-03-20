@@ -9,8 +9,6 @@ use strategies::hat_helpers::*;
 
 // TODO: use random extra information - i.e. when casting up and down,
 // we sometimes have 2 choices of value to choose
-// TODO: guess very aggressively at very end of game (first, see whether
-// situation ever occurs)
 
 type PropertyPredicate = fn(&BoardState, &Card) -> bool;
 
@@ -182,17 +180,20 @@ impl Question for CardPossibilityPartition {
 
 #[derive(Eq,PartialEq,Clone)]
 struct MyPublicInformation {
-    hand_info: FnvHashMap<Player, HandInfo<CardPossibilityTable>>,
+    // For each player, store the HandInfo, but also store, for each index, whether we already
+    // updated on that card being determined.
+    player_info: FnvHashMap<Player, (HandInfo<CardPossibilityTable>, Vec<bool>)>,
     card_counts: CardCounts, // what any newly drawn card should be
     board: BoardState, // TODO: maybe we should store an appropriately lifetimed reference?
 }
 
 impl MyPublicInformation {
-    fn get_player_info_mut(&mut self, player: &Player) -> &mut HandInfo<CardPossibilityTable> {
-        self.hand_info.get_mut(player).unwrap()
+    fn borrow_player_info_mut(&mut self, player: &Player) -> &mut HandInfo<CardPossibilityTable> {
+        &mut self.player_info.get_mut(player).unwrap().0
     }
-    fn take_player_info(&mut self, player: &Player) -> HandInfo<CardPossibilityTable> {
-        self.hand_info.remove(player).unwrap()
+
+    fn borrow_player_info(&self, player: &Player) -> &HandInfo<CardPossibilityTable> {
+        &self.player_info.get(player).unwrap().0
     }
 
     fn get_other_players_starting_after(&self, player: Player) -> Vec<Player> {
@@ -200,13 +201,29 @@ impl MyPublicInformation {
         (0 .. n - 1).into_iter().map(|i| { (player + 1 + i) % n }).collect()
     }
 
+    fn get_private_info(&self, view: &OwnedGameView) -> HandInfo<CardPossibilityTable> {
+        let mut info = self.get_player_info(&view.player);
+        for card_table in info.iter_mut() {
+            for (other_player, hand) in &view.other_hands {
+                let (_, was_determined) = self.player_info.get(other_player).unwrap();
+                for (card_was_determined, card) in was_determined.iter().zip(hand.iter()) {
+                    if !card_was_determined {
+                        card_table.decrement_weight_if_possible(card);
+                    }
+                }
+            }
+        }
+        info
+    }
+
+
     // Returns the number of ways to hint the player.
     fn get_info_per_player(&self, player: Player) -> u32 {
         // Determine if both:
         //  - it is public that there are at least two colors
         //  - it is public that there are at least two numbers
 
-        let ref info = self.hand_info[&player];
+        let info = self.borrow_player_info(&player);
 
         let may_be_all_one_color = COLORS.iter().any(|color| {
             info.iter().all(|card| {
@@ -242,7 +259,7 @@ impl MyPublicInformation {
     }
 
     fn get_index_for_hint(&self, player: &Player) -> usize {
-        let mut scores = self.hand_info[player].iter().enumerate().map(|(i, card_table)| {
+        let mut scores = self.borrow_player_info(player).iter().enumerate().map(|(i, card_table)| {
             let score = self.get_hint_index_score(card_table);
             (-score, i)
         }).collect::<Vec<_>>();
@@ -411,14 +428,17 @@ impl MyPublicInformation {
     }
 
     fn update_from_hint_matches(&mut self, hint: &Hint, matches: &Vec<bool>) {
-        let info = self.get_player_info_mut(&hint.player);
-        info.update_for_hint(&hint.hinted, matches);
+        {
+            let info = self.borrow_player_info_mut(&hint.player);
+            info.update_for_hint(&hint.hinted, matches);
+        }
+        self.update_other_info();
     }
 
     fn knows_playable_card(&self, player: &Player) -> bool {
-            self.hand_info[player].iter().any(|table| {
-                table.probability_is_playable(&self.board) == 1.0
-            })
+        self.borrow_player_info(player).iter().any(|table| {
+            table.probability_is_playable(&self.board) == 1.0
+        })
     }
 
     fn someone_else_needs_hint(&self, view: &OwnedGameView) -> bool {
@@ -438,7 +458,7 @@ impl MyPublicInformation {
             if player != self.board.player && !self.knows_playable_card(&player) {
                 // If player doesn't know any playable cards, player doesn't have any playable
                 // cards.
-                let mut hand_info = self.take_player_info(&player);
+                let mut hand_info = self.get_player_info(&player);
                 for ref mut card_table in hand_info.iter_mut() {
                     let possible = card_table.get_possibilities();
                     for card in &possible {
@@ -450,6 +470,7 @@ impl MyPublicInformation {
                 self.set_player_info(&player, hand_info);
             }
         }
+        self.update_other_info();
     }
 
     fn update_from_discard_or_play_result(
@@ -460,38 +481,49 @@ impl MyPublicInformation {
         card: &Card
     ) {
         let new_card_table = CardPossibilityTable::from(&self.card_counts);
-        {
-            let info = self.get_player_info_mut(player);
-            assert!(info[index].is_possible(card));
-            info.remove(index);
+        let was_known_determined = {
+            let (ref mut hand_info, ref mut known_determined) = self.player_info.get_mut(player).unwrap();
+            assert!(hand_info[index].is_possible(card));
+            hand_info.remove(index);
+            let was_known_determined = known_determined.remove(index);
 
             // push *before* incrementing public counts
-            if info.len() < new_view.hand_size(&player) {
-                info.push(new_card_table);
+            if hand_info.len() < new_view.hand_size(&player) {
+                hand_info.push(new_card_table);
+                known_determined.push(false);
             }
+            was_known_determined
+        };
+        if !was_known_determined {
+            self.decrement_weights_for_card(card);
+            self.update_other_info();
         }
+    }
 
-        // TODO: decrement weight counts for fully determined cards, ahead of time
-
+    /// Once we know a specific card is somewhere (a hand location or the discard pile), decrement
+    /// its weights everywhere else.
+    fn decrement_weights_for_card(&mut self, card: &Card) {
         for player in self.board.get_players() {
-            let info = self.get_player_info_mut(&player);
+            let info = self.borrow_player_info_mut(&player);
             for card_table in info.iter_mut() {
-                card_table.decrement_weight_if_possible(card);
+                if !card_table.is_determined() {
+                    card_table.decrement_weight_if_possible(card);
+                }
             }
         }
-
         self.card_counts.increment(card);
     }
 }
 
 impl PublicInformation for MyPublicInformation {
     fn new(board: &BoardState) -> Self {
-        let hand_info = board.get_players().map(|player| {
+        let player_info = board.get_players().map(|player| {
             let hand_info = HandInfo::new(board.hand_size);
-            (player, hand_info)
+            let is_determined = vec![false; board.hand_size as usize];
+            (player, (hand_info, is_determined))
         }).collect::<FnvHashMap<_,_>>();
         MyPublicInformation {
-            hand_info: hand_info,
+            player_info: player_info,
             card_counts: CardCounts::new(),
             board: board.clone(),
         }
@@ -502,15 +534,37 @@ impl PublicInformation for MyPublicInformation {
     }
 
     fn get_player_info(&self, player: &Player) -> HandInfo<CardPossibilityTable> {
-        self.hand_info[player].clone()
+        self.borrow_player_info(player).clone()
     }
 
     fn set_player_info(&mut self, player: &Player, hand_info: HandInfo<CardPossibilityTable>) {
-        self.hand_info.insert(*player, hand_info);
+        *self.borrow_player_info_mut(player) = hand_info;
     }
 
     fn agrees_with(&self, other: Self) -> bool {
         *self == other
+    }
+
+    fn update_other_info(&mut self) {
+        loop {
+            let mut updated_cards = Vec::new();
+            for player in self.board.get_players() {
+                let (hand_info, known_determined) = self.player_info.get_mut(&player).unwrap();
+                let zipped_iter = known_determined.iter_mut().zip(hand_info.iter());
+                for (is_known_determined, card_table) in zipped_iter {
+                    if !*is_known_determined && card_table.is_determined() {
+                        updated_cards.push(card_table.get_card().unwrap());
+                        *is_known_determined = true;
+                    }
+                }
+            }
+            if updated_cards.is_empty() {
+                break;
+            }
+            for card in updated_cards.into_iter() {
+                self.decrement_weights_for_card(&card);
+            }
+        }
     }
 
     fn ask_question(
@@ -789,16 +843,37 @@ impl InformationPlayerStrategy {
             return TurnChoice::Play(play_index)
         }
 
+        // If the deck ran out, we know we have a playable card somewhere, and there's only one place
+        // where it could be, play it.
+        // NOTE: This is very close to unnecessary since we're aggressively making risky plays at
+        // the end of the game.
+        // TODO: Replace this "ad hoc deduction" with something better integrated into our strategy
+        if view.board.deck_size == 0 {
+            let possibly_playable_cards = private_info.iter().enumerate().filter(|&(_, card_table)| {
+                card_table.probability_is_playable(&view.board) > 0.0
+            }).collect::<Vec<_>>();
+            if possibly_playable_cards.len() == 1 {
+                let (index, _) = possibly_playable_cards[0];
+                return TurnChoice::Play(index);
+            }
+        }
+
         let discard_threshold =
             view.board.total_cards
             - (COLORS.len() * VALUES.len()) as u32
             - (view.board.num_players * view.board.hand_size);
 
-        // make a possibly risky play
-        // TODO: consider removing this, if we improve information transfer
-        if view.board.lives_remaining > 1 &&
-           view.board.discard_size() <= discard_threshold
-        {
+        // Our willingness to make risky plays. If None, we won't, if Some(p) we play a card if it
+        // succeeds with probability > p.
+        let risky_play_threshold =
+            if view.board.lives_remaining <= 1 { None }
+            // NOTE: Once the deck runs out, our calculated "success probabilities" are pretty far off
+            // from the probabilities a smarter reasoner would come up with. Once we improve how we
+            // assign probabilities to cards, we should check if a threshold other than 0.0 is better.
+            else if view.board.deck_size == 0 { Some(0.0) }
+            else if view.board.discard_size() <= discard_threshold { Some(0.75) }
+            else { None };
+        if let Some(risky_play_threshold) = risky_play_threshold {
             let mut risky_playable_cards = private_info.iter().enumerate().filter(|&(_, card_table)| {
                 // card is either playable or dead
                 card_table.probability_of_predicate(&|card| {
@@ -815,13 +890,12 @@ impl InformationPlayerStrategy {
                 });
 
                 let maybe_play = risky_playable_cards[0];
-                if maybe_play.2 > 0.75 {
+                if maybe_play.2 > risky_play_threshold {
                     return TurnChoice::Play(maybe_play.0);
                 }
             }
         }
 
-        let public_useless_indices = self.find_useless_cards(&view.board, &public_info.get_player_info(me));
         let useless_indices = self.find_useless_cards(&view.board, &private_info);
 
         // NOTE When changing this, make sure to keep the "discard" branch of update() up to date!
@@ -844,6 +918,10 @@ impl InformationPlayerStrategy {
         if self.last_view.board.hints_remaining > 0 {
             public_info.update_noone_else_needs_hint();
         }
+
+        // This block has to be after the update_noone_else_needs_hint() since this call could
+        // have expanded the set of public useless indices.
+        let public_useless_indices = self.find_useless_cards(&view.board, &public_info.get_player_info(me));
 
         // if anything is totally useless, discard it
         if public_useless_indices.len() > 1 {
@@ -890,13 +968,13 @@ impl InformationPlayerStrategy {
                 self.public_info.update_from_hint_choice(hint, matches, &self.last_view);
             }
             TurnChoice::Discard(index) => {
-                let known_useless_indices = self.find_useless_cards(
-                    &self.last_view.board, &self.public_info.get_player_info(turn_player)
-                );
-
                 if self.last_view.board.hints_remaining > 0 {
                     self.public_info.update_noone_else_needs_hint();
                 }
+
+                let known_useless_indices = self.find_useless_cards(
+                    &self.last_view.board, &self.public_info.get_player_info(turn_player)
+                );
                 if known_useless_indices.len() > 1 {
                     // unwrap is safe because *if* a discard happened, and there were known
                     // dead cards, it must be a dead card
