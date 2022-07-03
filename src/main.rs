@@ -189,7 +189,7 @@ fn get_results_table() -> String {
         body.into_iter().fold(String::default(), |output, (a, b)| (output + &a + "\n" + &b + "\n"))
     }
     let header = make_twolines(&player_nums,
-                               (space.clone(), dashes.clone()),
+                               (space.clone(), dashes),
                                &|n_players| (format_players(n_players), dashes_long.clone()));
     let mut body = strategies.iter().map(|strategy| {
         make_twolines(&player_nums, (format_name(strategy), space.clone()), &|n_players| {
