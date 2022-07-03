@@ -370,7 +370,7 @@ impl BoardState {
     }
 
     pub fn get_players(&self) -> Range<Player> {
-        (0..self.num_players)
+        0..self.num_players
     }
 
     pub fn score(&self) -> Score {
@@ -432,7 +432,7 @@ impl fmt::Display for BoardState {
 // complete game view of a given player
 pub trait GameView {
     fn me(&self) -> Player;
-    fn get_hand(&self, &Player) -> &Cards;
+    fn get_hand(&self, player: &Player) -> &Cards;
     fn get_board(&self) -> &BoardState;
 
     fn my_hand_size(&self) -> usize;

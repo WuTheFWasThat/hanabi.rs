@@ -80,10 +80,10 @@ pub trait Question {
     // how much info does this question ask for?
     fn info_amount(&self) -> u32;
     // get the answer to this question, given cards
-    fn answer(&self, &Cards, &BoardState) -> u32;
+    fn answer(&self, hand: &Cards, board: &BoardState) -> u32;
     // process the answer to this question, updating card info
     fn acknowledge_answer(
-        &self, value: u32, &mut HandInfo<CardPossibilityTable>, &BoardState
+        &self, value: u32, hand_info: &mut HandInfo<CardPossibilityTable>, board: &BoardState
     );
 
     fn answer_info(&self, hand: &Cards, board: &BoardState) -> ModulusInformation {
@@ -105,11 +105,11 @@ pub trait Question {
 }
 
 pub trait PublicInformation: Clone {
-    fn get_player_info(&self, &Player) -> HandInfo<CardPossibilityTable>;
-    fn set_player_info(&mut self, &Player, HandInfo<CardPossibilityTable>);
+    fn get_player_info(&self, player: &Player) -> HandInfo<CardPossibilityTable>;
+    fn set_player_info(&mut self, player: &Player, hand_info: HandInfo<CardPossibilityTable>);
 
-    fn new(&BoardState) -> Self;
-    fn set_board(&mut self, &BoardState);
+    fn new(board: &BoardState) -> Self;
+    fn set_board(&mut self, board: &BoardState);
 
     /// If we store more state than just `HandInfo<CardPossibilityTable>`s, update it after `set_player_info` has been called.
     fn update_other_info(&mut self) {
@@ -126,7 +126,7 @@ pub trait PublicInformation: Clone {
     ///
     /// Note that `self` does not reflect the answers to previous questions; it reflects the state
     /// before the entire "hat value" calculation.
-    fn ask_question(&self, &Player, &HandInfo<CardPossibilityTable>, total_info: u32) -> Option<Box<Question>>;
+    fn ask_question(&self, player: &Player, hand_info: &HandInfo<CardPossibilityTable>, total_info: u32) -> Option<Box<Question>>;
 
     fn ask_question_wrapper(&self, player: &Player, hand_info: &HandInfo<CardPossibilityTable>, total_info: u32)
         -> Option<Box<Question>>
