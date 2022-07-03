@@ -372,7 +372,7 @@ impl MyPublicInformation {
 
         let player_amt = (n + hint.player - hinter - 1) % n;
 
-        let amt_from_prev_players = info_per_player.iter().take(player_amt as usize).fold(0, |a, b| a + b);
+        let amt_from_prev_players = info_per_player.iter().take(player_amt as usize).sum::<u32>();
         let hint_info_we_can_give_to_this_player = info_per_player[player_amt as usize];
 
         let card_index = self.get_index_for_hint(&hint.player);

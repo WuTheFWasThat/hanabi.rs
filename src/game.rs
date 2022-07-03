@@ -370,7 +370,7 @@ impl BoardState {
     }
 
     pub fn score(&self) -> Score {
-        self.fireworks.iter().map(|(_, firework)| firework.score()).fold(0, |a, b| a + b)
+        self.fireworks.iter().map(|(_, firework)| firework.score()).sum()
     }
 
     pub fn discard_size(&self) -> u32 {

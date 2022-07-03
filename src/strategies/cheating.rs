@@ -93,7 +93,7 @@ impl CheatingPlayerStrategy {
 
     // given a hand of cards, represents how badly it will need to play things
     fn hand_play_value(&self, view: &BorrowedGameView, hand: &Cards) -> u32 {
-        hand.iter().map(|card| self.card_play_value(view, card)).fold(0, |a,b| a+b)
+        hand.iter().map(|card| self.card_play_value(view, card)).sum()
     }
 
     // how badly do we need to play a particular card
