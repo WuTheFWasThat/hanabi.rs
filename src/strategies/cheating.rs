@@ -130,7 +130,7 @@ impl CheatingPlayerStrategy {
             }
             set.insert(card.clone());
         }
-        return None
+        None
     }
 }
 impl PlayerStrategy for CheatingPlayerStrategy {

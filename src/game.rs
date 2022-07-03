@@ -332,7 +332,7 @@ impl BoardState {
                 return value - 1;
             }
         }
-        return FINAL_VALUE;
+        FINAL_VALUE
     }
 
     // is never going to play, based on discard + fireworks

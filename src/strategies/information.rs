@@ -220,7 +220,7 @@ impl MyPublicInformation {
             })
         });
 
-        return if !may_be_all_one_color && !may_be_all_one_number { 4 } else { 3 }
+        if !may_be_all_one_color && !may_be_all_one_number { 4 } else { 3 }
     }
 
     fn get_hint_index_score(&self, card_table: &CardPossibilityTable) -> i32 {
@@ -238,7 +238,7 @@ impl MyPublicInformation {
         if !card_table.value_determined() {
             score += 1;
         }
-        return score;
+        score
     }
 
     fn get_index_for_hint(&self, player: &Player) -> usize {
@@ -677,7 +677,7 @@ impl InformationPlayerStrategy {
         }
         let mut useless_vec : Vec<usize> = useless.into_iter().collect();
         useless_vec.sort();
-        return useless_vec;
+        useless_vec
     }
 
     // how good is it to give this hint to this player?
