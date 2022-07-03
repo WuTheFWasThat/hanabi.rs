@@ -532,8 +532,7 @@ impl PublicInformation for MyPublicInformation {
 
         // We don't need to find out anything about cards that are determined or dead.
         let augmented_hand_info = augmented_hand_info_raw.into_iter().filter(|&(i, _, p_dead)| {
-            if p_dead == 1.0 { false }
-            else if hand_info[i].is_determined() { false }
+            if p_dead == 1.0 || hand_info[i].is_determined() { false }
             else { true }
         }).collect::<Vec<_>>();
 
@@ -712,9 +711,7 @@ impl InformationPlayerStrategy {
             let new_weight = card_table.total_weight();
             assert!(new_weight <= old_weight);
             let bonus = {
-                if card_table.is_determined() {
-                    2
-                } else if card_table.probability_is_dead(&view.board) == 1.0 {
+                if card_table.is_determined() || card_table.probability_is_dead(&view.board) == 1.0 {
                     2
                 } else {
                     1

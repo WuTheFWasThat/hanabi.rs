@@ -357,9 +357,7 @@ impl BoardState {
             true
         } else {
             let needed = firework.needed_value().unwrap();
-            if card.value < needed {
-                true
-            } else if card.value > self.highest_attainable(card.color) {
+            if card.value < needed || card.value > self.highest_attainable(card.color) {
                 true
             } else {
                 self.discard.remaining(card) != 1
