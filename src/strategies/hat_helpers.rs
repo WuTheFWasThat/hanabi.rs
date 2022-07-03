@@ -21,7 +21,7 @@ impl ModulusInformation {
 
     pub fn combine(&mut self, other: Self, max_modulus: u32) {
         assert!(other.modulus <= self.info_remaining(max_modulus));
-        self.value = self.value + self.modulus * other.value;
+        self.value += self.modulus * other.value;
         self.modulus = std::cmp::min(max_modulus, self.modulus * other.modulus);
         assert!(self.value < self.modulus);
     }
@@ -45,7 +45,7 @@ impl ModulusInformation {
         let original_modulus = self.modulus;
         let original_value = self.value;
         let value = self.value % modulus;
-        self.value = self.value / modulus;
+        self.value /= modulus;
         // `self.modulus` is the largest number such that
         // `value + (self.modulus - 1) * modulus < original_modulus`.
         // TODO: find an explanation of why this makes everything work out
