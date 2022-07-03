@@ -191,7 +191,7 @@ pub trait PublicInformation: Clone {
         let (infos, new_player_hands): (Vec<_>, Vec<_>) = view.get_other_players().iter().map(|player| {
             let mut hand_info = self.get_player_info(player);
             let info = self.get_hat_info_for_player(player, &mut hand_info, total_info, view);
-            (info, (player.clone(), hand_info))
+            (info, (*player, hand_info))
         }).unzip();
         self.set_player_infos(new_player_hands);
         infos.into_iter().fold(
@@ -213,7 +213,7 @@ pub trait PublicInformation: Clone {
         }).map(|player| {
             let mut hand_info = self.get_player_info(&player);
             let player_info = self.get_hat_info_for_player(&player, &mut hand_info, info.modulus, view);
-            (player_info, (player.clone(), hand_info))
+            (player_info, (player, hand_info))
         }).unzip();
         for other_info in other_infos {
             info.subtract(&other_info);

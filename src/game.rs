@@ -514,7 +514,7 @@ impl OwnedGameView {
             }).collect::<FnvHashMap<_, _>>();
 
         OwnedGameView {
-            player: borrowed_view.player.clone(),
+            player: borrowed_view.player,
             hand_size: borrowed_view.hand_size,
             other_hands,
             board: (*borrowed_view.board).clone(),
@@ -699,7 +699,7 @@ impl GameState {
             }
         };
         let turn_record = TurnRecord {
-            player: self.board.player.clone(),
+            player: self.board.player,
             result: turn_result,
             choice,
         };
