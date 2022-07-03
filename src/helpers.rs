@@ -382,7 +382,7 @@ impl <T> HandInfo<T> where T: CardInfo {
     }
 
     // update for hint to me
-    pub fn update_for_hint(&mut self, hinted: &Hinted, matches: &Vec<bool>) {
+    pub fn update_for_hint(&mut self, hinted: &Hinted, matches: &[bool]) {
         match hinted {
             &Hinted::Color(color) => {
                 for (card_info, &matched) in self.hand_info.iter_mut().zip(matches.iter()) {

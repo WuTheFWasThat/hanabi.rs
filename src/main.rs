@@ -176,7 +176,7 @@ fn get_results_table() -> String {
     let dashes         =        String::from("---------");
     let dashes_long    =        String::from("------------------");
     type TwoLines = (String, String);
-    fn make_twolines(player_nums: &Vec<u32>, head: TwoLines, make_block: &dyn Fn(u32) -> TwoLines) -> TwoLines {
+    fn make_twolines(player_nums: &[u32], head: TwoLines, make_block: &dyn Fn(u32) -> TwoLines) -> TwoLines {
         let mut blocks = player_nums.iter().cloned().map(make_block).collect::<Vec<_>>();
         blocks.insert(0, head);
         fn combine(items: Vec<String>) -> String {

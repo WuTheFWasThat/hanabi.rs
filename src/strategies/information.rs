@@ -360,7 +360,7 @@ impl MyPublicInformation {
         }).collect()
     }
 
-    fn decode_hint_choice(&self, hint: &Hint, result: &Vec<bool>) -> ModulusInformation {
+    fn decode_hint_choice(&self, hint: &Hint, result: &[bool]) -> ModulusInformation {
         let hinter = self.board.player;
 
         let info_per_player: Vec<_> = self.get_other_players_starting_after(hinter).into_iter().map(
@@ -405,12 +405,12 @@ impl MyPublicInformation {
         ModulusInformation::new(total_info, hint_value)
     }
 
-    fn update_from_hint_choice(&mut self, hint: &Hint, matches: &Vec<bool>, view: &OwnedGameView) {
+    fn update_from_hint_choice(&mut self, hint: &Hint, matches: &[bool], view: &OwnedGameView) {
         let info = self.decode_hint_choice(hint, matches);
         self.update_from_hat_sum(info, view);
     }
 
-    fn update_from_hint_matches(&mut self, hint: &Hint, matches: &Vec<bool>) {
+    fn update_from_hint_matches(&mut self, hint: &Hint, matches: &[bool]) {
         let info = self.get_player_info_mut(&hint.player);
         info.update_for_hint(&hint.hinted, matches);
     }
