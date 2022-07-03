@@ -363,7 +363,7 @@ impl CardInfo for CardPossibilityTable {
 impl fmt::Display for CardPossibilityTable {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for (card, weight) in &self.possible {
-            try!(f.write_str(&format!("{} {}, ", weight, card)));
+            f.write_str(&format!("{} {}, ", weight, card))?;
         }
         Ok(())
     }
