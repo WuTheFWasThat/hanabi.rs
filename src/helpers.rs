@@ -328,7 +328,7 @@ impl <'a> From<&'a CardCounts> for CardPossibilityTable {
             }
         }
         CardPossibilityTable {
-            possible: possible,
+            possible,
         }
     }
 }
@@ -377,7 +377,7 @@ impl <T> HandInfo<T> where T: CardInfo {
     pub fn new(hand_size: u32) -> Self {
         let hand_info = (0..hand_size).map(|_| T::new()).collect::<Vec<_>>();
         HandInfo {
-            hand_info: hand_info,
+            hand_info,
         }
     }
 

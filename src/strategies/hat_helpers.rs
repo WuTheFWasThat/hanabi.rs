@@ -10,8 +10,8 @@ impl ModulusInformation {
     pub fn new(modulus: u32, value: u32) -> Self {
         assert!(value < modulus);
         ModulusInformation {
-            modulus: modulus,
-            value: value,
+            modulus,
+            value,
         }
     }
 

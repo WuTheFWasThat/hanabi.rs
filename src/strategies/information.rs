@@ -152,9 +152,9 @@ impl CardPossibilityPartition {
         // debug!("{}", s);
 
         CardPossibilityPartition {
-            index: index,
-            n_partitions: n_partitions,
-            partition: partition,
+            index,
+            n_partitions,
+            partition,
         }
     }
 }
@@ -355,7 +355,7 @@ impl MyPublicInformation {
         hint_option_set.into_iter().collect::<FnvHashSet<_>>().into_iter().map(|hinted| {
             Hint {
                 player: hint_player,
-                hinted: hinted,
+                hinted,
             }
         }).collect()
     }
@@ -491,7 +491,7 @@ impl PublicInformation for MyPublicInformation {
             (player, hand_info)
         }).collect::<FnvHashMap<_,_>>();
         MyPublicInformation {
-            hand_info: hand_info,
+            hand_info,
             card_counts: CardCounts::new(),
             board: board.clone(),
         }

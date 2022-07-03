@@ -131,7 +131,7 @@ fn sim_games(n_players: u32, strategy_str: &str, seed: Option<u32>, n_trials: u3
 
     let game_opts = game::GameOptions {
         num_players: n_players,
-        hand_size: hand_size,
+        hand_size,
         num_hints: 8,
         num_lives: 3,
         // hanabi rules are a bit ambiguous about whether you can give hints that match 0 cards

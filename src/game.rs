@@ -30,7 +30,7 @@ pub struct Card {
 }
 impl Card {
     pub fn new(color: Color, value: Value) -> Card {
-        Card { color: color, value: value }
+        Card { color, value }
     }
 }
 impl fmt::Display for Card {
@@ -57,7 +57,7 @@ impl CardCounts {
             }
         }
         CardCounts {
-            counts: counts,
+            counts,
         }
     }
 
@@ -145,7 +145,7 @@ pub struct Firework {
 impl Firework {
     pub fn new(color: Color) -> Firework {
         Firework {
-            color: color,
+            color,
             top: 0,
         }
     }
@@ -274,9 +274,9 @@ impl BoardState {
         }).collect::<FnvHashMap<_, _>>();
 
         BoardState {
-            deck_size: deck_size,
+            deck_size,
             total_cards: deck_size,
-            fireworks: fireworks,
+            fireworks,
             discard: Discard::new(),
             num_players: opts.num_players,
             hand_size: opts.hand_size,
@@ -520,7 +520,7 @@ impl OwnedGameView {
         OwnedGameView {
             player: borrowed_view.player.clone(),
             hand_size: borrowed_view.hand_size,
-            other_hands: other_hands,
+            other_hands,
             board: (*borrowed_view.board).clone(),
         }
     }
@@ -585,9 +585,9 @@ impl GameState {
             }).collect::<FnvHashMap<_, _>>();
 
         GameState {
-            hands: hands,
-            board: board,
-            deck: deck,
+            hands,
+            board,
+            deck,
         }
     }
 
@@ -612,9 +612,9 @@ impl GameState {
             }
         }
         BorrowedGameView {
-            player: player,
+            player,
             hand_size: self.hands.get(&player).unwrap().len(),
-            other_hands: other_hands,
+            other_hands,
             board: &self.board,
         }
     }
@@ -705,7 +705,7 @@ impl GameState {
         let turn_record = TurnRecord {
             player: self.board.player.clone(),
             result: turn_result,
-            choice: choice,
+            choice,
         };
         self.board.turn_history.push(turn_record.clone());
 

@@ -55,7 +55,7 @@ impl PlayerStrategy for RandomStrategyPlayer {
                 };
                 TurnChoice::Hint(Hint {
                     player: hint_player,
-                    hinted: hinted,
+                    hinted,
                 })
             } else {
                 TurnChoice::Discard(0)
