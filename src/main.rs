@@ -75,7 +75,7 @@ fn main() {
         Ok(m) => { m }
         Err(f) => {
             print_usage(&program, opts);
-            panic!(f.to_string())
+            panic!("{}", f)
         }
     };
     if matches.opt_present("h") {

@@ -19,7 +19,7 @@ pub fn get_count_for_value(value: Value) -> u32 {
         1         => 3,
         2 | 3 | 4 => 2,
         5         => 1,
-        _ => { panic!(format!("Unexpected value: {}", value)); }
+        _ => { panic!("Unexpected value: {}", value); }
     }
 }
 
@@ -646,7 +646,7 @@ impl GameState {
                     debug!("Hint to player {}, about {}", hint.player, hint.hinted);
 
                     assert!(self.board.player != hint.player,
-                            format!("Player {} gave a hint to himself", hint.player));
+                            "Player {} gave a hint to himself", hint.player);
 
                     let hand = self.hands.get(&hint.player).unwrap();
                     let results = match hint.hinted {
