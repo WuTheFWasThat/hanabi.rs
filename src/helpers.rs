@@ -137,7 +137,7 @@ pub trait Info<T> where T: Hash + Eq + Clone + Copy {
 
     // get what is now possible
     fn get_possibilities(&self) -> Vec<T> {
-        self.get_possibility_set().iter().map(|t| t.clone()).collect::<Vec<T>>()
+        self.get_possibility_set().iter().cloned().collect::<Vec<T>>()
     }
 
     fn is_possible(&self, value: T) -> bool {
@@ -146,7 +146,7 @@ pub trait Info<T> where T: Hash + Eq + Clone + Copy {
 
     fn initialize() -> HashSet<T> {
         Self::get_all_possibilities().iter()
-            .map(|val| val.clone()).collect::<HashSet<_>>()
+            .cloned().collect::<HashSet<_>>()
     }
 
     fn mark_true(&mut self, value: T) {
@@ -341,7 +341,7 @@ impl CardInfo for CardPossibilityTable {
         self.possible.contains_key(card)
     }
     fn get_possibilities(&self) -> Vec<Card> {
-        let mut cards = self.possible.keys().map(|card| {card.clone() }).collect::<Vec<_>>();
+        let mut cards = self.possible.keys().cloned().collect::<Vec<_>>();
         cards.sort();
         cards
     }
