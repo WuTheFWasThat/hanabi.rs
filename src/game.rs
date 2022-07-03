@@ -192,8 +192,8 @@ pub enum Hinted {
 impl fmt::Display for Hinted {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &Hinted::Color(color) => { write!(f, "{}", color) }
-            &Hinted::Value(value) => { write!(f, "{}", value) }
+            Hinted::Color(color) => { write!(f, "{}", color) }
+            Hinted::Value(value) => { write!(f, "{}", value) }
         }
     }
 }
