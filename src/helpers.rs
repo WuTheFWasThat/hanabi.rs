@@ -152,7 +152,7 @@ pub trait Info<T> where T: Hash + Eq + Clone {
     fn mark_true(&mut self, value: T) {
         let possible = self.get_mut_possibility_set();
         possible.clear();
-        possible.insert(value.clone());
+        possible.insert(value);
     }
 
     fn mark_false(&mut self, value: T) {
