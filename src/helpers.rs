@@ -126,7 +126,7 @@ pub trait CardInfo {
 
 
 // Represents hinted information about possible values of type T
-pub trait Info<T> where T: Hash + Eq + Clone + Copy {
+pub trait Info<T> where T: Hash + Eq + Clone {
     // get all a-priori possibilities
     fn get_all_possibilities() -> Vec<T>;
 
