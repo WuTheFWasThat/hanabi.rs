@@ -25,7 +25,7 @@ impl CheatingStrategyConfig {
     }
 }
 impl GameStrategyConfig for CheatingStrategyConfig {
-    fn initialize(&self, _: &GameOptions) -> Box<GameStrategy> {
+    fn initialize(&self, _: &GameOptions) -> Box<dyn GameStrategy> {
         Box::new(CheatingStrategy::new())
     }
 }
@@ -42,7 +42,7 @@ impl CheatingStrategy {
     }
 }
 impl GameStrategy for CheatingStrategy {
-    fn initialize(&self, player: Player, view: &BorrowedGameView) -> Box<PlayerStrategy> {
+    fn initialize(&self, player: Player, view: &BorrowedGameView) -> Box<dyn PlayerStrategy> {
         for (&player, &hand) in &view.other_hands {
             self.player_hands_cheat.borrow_mut().insert(
                 player, hand.clone()

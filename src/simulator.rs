@@ -24,7 +24,7 @@ fn new_deck(seed: u32) -> Cards {
 
 pub fn simulate_once(
         opts: &GameOptions,
-        game_strategy: Box<GameStrategy>,
+        game_strategy: Box<dyn GameStrategy>,
         seed: u32,
     ) -> GameState {
     let deck = new_deck(seed);
@@ -33,7 +33,7 @@ pub fn simulate_once(
 
     let mut strategies = game.get_players().map(|player| {
         (player, game_strategy.initialize(player, &game.get_view(player)))
-    }).collect::<FnvHashMap<Player, Box<PlayerStrategy>>>();
+    }).collect::<FnvHashMap<Player, Box<dyn PlayerStrategy>>>();
 
     while !game.is_over() {
         let player = game.board.player;

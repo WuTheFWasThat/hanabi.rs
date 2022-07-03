@@ -126,10 +126,10 @@ pub trait PublicInformation: Clone {
     ///
     /// Note that `self` does not reflect the answers to previous questions; it reflects the state
     /// before the entire "hat value" calculation.
-    fn ask_question(&self, player: &Player, hand_info: &HandInfo<CardPossibilityTable>, total_info: u32) -> Option<Box<Question>>;
+    fn ask_question(&self, player: &Player, hand_info: &HandInfo<CardPossibilityTable>, total_info: u32) -> Option<Box<dyn Question>>;
 
     fn ask_question_wrapper(&self, player: &Player, hand_info: &HandInfo<CardPossibilityTable>, total_info: u32)
-        -> Option<Box<Question>>
+        -> Option<Box<dyn Question>>
     {
         assert!(total_info > 0);
         if total_info == 1 {

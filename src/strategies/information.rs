@@ -58,7 +58,7 @@ fn q_is_dead(index: usize) -> CardHasProperty {
 /// It's named that way because the `info_amount` grows additively with the `info_amount`s of
 /// the questions in `l`.
 struct AdditiveComboQuestion {
-    questions: Vec<Box<Question>>,
+    questions: Vec<Box<dyn Question>>,
 }
 impl Question for AdditiveComboQuestion {
     fn info_amount(&self) -> u32 {
@@ -518,7 +518,7 @@ impl PublicInformation for MyPublicInformation {
         _me: &Player,
         hand_info: &HandInfo<CardPossibilityTable>,
         total_info: u32,
-    ) -> Option<Box<Question>> {
+    ) -> Option<Box<dyn Question>> {
         // Changing anything inside this function will not break the information transfer
         // mechanisms!
 
@@ -565,7 +565,7 @@ impl PublicInformation for MyPublicInformation {
             // only matters if we find a playable/dead card, and conditional on that, it's better
             // to find out about as many non-playable/non-dead cards as possible.
             to_ask.sort_by_key(|&(ask_dead, _, p_yes)| {(ask_dead, FloatOrd(p_yes))});
-            let questions = to_ask.into_iter().map(|(ask_dead, i, _)| -> Box<Question> {
+            let questions = to_ask.into_iter().map(|(ask_dead, i, _)| -> Box<dyn Question> {
                 if ask_dead { Box::new(q_is_dead(i)) }
                 else        { Box::new(q_is_playable(i)) }
             }).collect::<Vec<_>>();
@@ -607,7 +607,7 @@ impl InformationStrategyConfig {
     }
 }
 impl GameStrategyConfig for InformationStrategyConfig {
-    fn initialize(&self, _: &GameOptions) -> Box<GameStrategy> {
+    fn initialize(&self, _: &GameOptions) -> Box<dyn GameStrategy> {
         Box::new(InformationStrategy::new())
     }
 }
@@ -620,7 +620,7 @@ impl InformationStrategy {
     }
 }
 impl GameStrategy for InformationStrategy {
-    fn initialize(&self, player: Player, view: &BorrowedGameView) -> Box<PlayerStrategy> {
+    fn initialize(&self, player: Player, view: &BorrowedGameView) -> Box<dyn PlayerStrategy> {
         Box::new(InformationPlayerStrategy {
             me: player,
             public_info: MyPublicInformation::new(view.board),

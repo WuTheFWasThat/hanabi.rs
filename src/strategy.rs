@@ -15,12 +15,12 @@ pub trait PlayerStrategy {
 // Shouldn't do much, except store configuration parameters and
 // possibility initialize some shared randomness between players
 pub trait GameStrategy {
-    fn initialize(&self, player: Player, view: &BorrowedGameView) -> Box<PlayerStrategy>;
+    fn initialize(&self, player: Player, view: &BorrowedGameView) -> Box<dyn PlayerStrategy>;
 }
 
 // Represents configuration for a strategy.
 // Acts as a factory for game strategies, so we can play many rounds
 pub trait GameStrategyConfig {
-    fn initialize(&self, opts: &GameOptions) -> Box<GameStrategy>;
+    fn initialize(&self, opts: &GameOptions) -> Box<dyn GameStrategy>;
 }
 

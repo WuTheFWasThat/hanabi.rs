@@ -138,20 +138,20 @@ fn sim_games(n_players: u32, strategy_str: &str, seed: Option<u32>, n_trials: u3
         allow_empty_hints: false,
     };
 
-    let strategy_config : Box<strategy::GameStrategyConfig + Sync> = match strategy_str {
+    let strategy_config : Box<dyn strategy::GameStrategyConfig + Sync> = match strategy_str {
         "random" => {
             Box::new(strategies::examples::RandomStrategyConfig {
                 hint_probability: 0.4,
                 play_probability: 0.2,
-            }) as Box<strategy::GameStrategyConfig + Sync>
+            }) as Box<dyn strategy::GameStrategyConfig + Sync>
         },
         "cheat" => {
             Box::new(strategies::cheating::CheatingStrategyConfig::new())
-                as Box<strategy::GameStrategyConfig + Sync>
+                as Box<dyn strategy::GameStrategyConfig + Sync>
         },
         "info" => {
             Box::new(strategies::information::InformationStrategyConfig::new())
-                as Box<strategy::GameStrategyConfig + Sync>
+                as Box<dyn strategy::GameStrategyConfig + Sync>
         },
         _ => {
             panic!("Unexpected strategy argument {}", strategy_str);

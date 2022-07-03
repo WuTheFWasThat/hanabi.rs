@@ -50,7 +50,7 @@ pub trait CardInfo {
             .fold(0.0, |a, b| a+b)
     }
 
-    fn weighted_score<T>(&self, score_fn: &Fn(&Card) -> T) -> f32
+    fn weighted_score<T>(&self, score_fn: &dyn Fn(&Card) -> T) -> f32
         where f32: From<T>
     {
         let mut total_score = 0.;
@@ -68,7 +68,7 @@ pub trait CardInfo {
         self.weighted_score(&|card| card.value as f32 )
     }
 
-    fn probability_of_predicate(&self, predicate: &Fn(&Card) -> bool) -> f32 {
+    fn probability_of_predicate(&self, predicate: &dyn Fn(&Card) -> bool) -> f32 {
         let f = |card: &Card| {
             if predicate(card) { 1.0 } else { 0.0 }
         };
