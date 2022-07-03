@@ -89,7 +89,7 @@ impl Histogram {
         self.insert_many(val, 1);
     }
     pub fn get_count(&self, val: &Score) -> u32 {
-        *self.hist.get(&val).unwrap_or(&0)
+        *self.hist.get(val).unwrap_or(&0)
     }
     pub fn percentage_with(&self, val: &Score) -> f32 {
         self.get_count(val) as f32 / self.total_count as f32
@@ -164,7 +164,7 @@ pub fn simulate<T: ?Sized>(
                             );
                         }
                     }
-                    let game = simulate_once(&opts, strat_config_ref.initialize(&opts), seed);
+                    let game = simulate_once(opts, strat_config_ref.initialize(opts), seed);
                     let score = game.score();
                     lives_histogram.insert(game.board.lives_remaining);
                     score_histogram.insert(score);

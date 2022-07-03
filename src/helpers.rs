@@ -46,7 +46,7 @@ pub trait CardInfo {
 
     fn total_weight(&self) -> f32 {
         self.get_possibilities().iter()
-            .map(|card| self.get_weight(&card))
+            .map(|card| self.get_weight(card))
             .fold(0.0, |a, b| a+b)
     }
 

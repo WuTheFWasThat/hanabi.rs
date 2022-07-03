@@ -44,7 +44,7 @@ impl PlayerStrategy for RandomStrategyPlayer {
         if p < self.hint_probability {
             if view.board.hints_remaining > 0 {
                 let hint_player = view.board.player_to_left(&self.me);
-                let hint_card = rand::thread_rng().choose(&view.get_hand(&hint_player)).unwrap();
+                let hint_card = rand::thread_rng().choose(view.get_hand(&hint_player)).unwrap();
                 let hinted = {
                     if rand::random() {
                         // hint a color

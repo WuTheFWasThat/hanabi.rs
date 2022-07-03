@@ -113,7 +113,7 @@ impl CardPossibilityPartition {
         let mut partition = FnvHashMap::default();
         let mut n_partitions = 0;
 
-        let has_dead = card_table.probability_is_dead(&board) != 0.0;
+        let has_dead = card_table.probability_is_dead(board) != 0.0;
 
         // TODO: group things of different colors and values?
         let mut effective_max = max_n_partitions;
@@ -162,7 +162,7 @@ impl Question for CardPossibilityPartition {
     fn info_amount(&self) -> u32 { self.n_partitions }
     fn answer(&self, hand: &Cards, _: &BoardState) -> u32 {
         let ref card = hand[self.index];
-        *self.partition.get(&card).unwrap()
+        *self.partition.get(card).unwrap()
     }
     fn acknowledge_answer(
         &self,
@@ -424,10 +424,10 @@ impl MyPublicInformation {
     fn someone_else_needs_hint(&self, view: &OwnedGameView) -> bool {
         // Does another player have a playable card, but doesn't know it?
         view.get_other_players().iter().any(|player| {
-            let has_playable_card = view.get_hand(&player).iter().any(|card| {
+            let has_playable_card = view.get_hand(player).iter().any(|card| {
                 view.get_board().is_playable(card)
             });
-            has_playable_card && !self.knows_playable_card(&player)
+            has_playable_card && !self.knows_playable_card(player)
         })
     }
 
@@ -466,7 +466,7 @@ impl MyPublicInformation {
             info.remove(index);
 
             // push *before* incrementing public counts
-            if info.len() < new_view.hand_size(&player) {
+            if info.len() < new_view.hand_size(player) {
                 info.push(new_card_table);
             }
         }
@@ -688,8 +688,8 @@ impl InformationPlayerStrategy {
 
         let hint_player = &hint.player;
         let hinted = &hint.hinted;
-        let hand = view.get_hand(&hint_player);
-        let mut hand_info = self.public_info.get_player_info(&hint_player);
+        let hand = view.get_hand(hint_player);
+        let mut hand_info = self.public_info.get_player_info(hint_player);
 
         let mut goodness = 1.0;
         for (i, card_table) in hand_info.iter_mut().enumerate() {

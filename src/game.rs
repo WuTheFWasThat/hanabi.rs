@@ -362,7 +362,7 @@ impl BoardState {
             } else if card.value > self.highest_attainable(card.color) {
                 true
             } else {
-                self.discard.remaining(&card) != 1
+                self.discard.remaining(card) != 1
             }
         }
     }
@@ -457,13 +457,13 @@ pub trait GameView {
 
     fn can_see(&self, card: &Card) -> bool {
         self.get_other_players().iter().any(|player| {
-            self.has_card(&player, card)
+            self.has_card(player, card)
         })
     }
 
     fn someone_else_can_play(&self) -> bool {
         self.get_other_players().iter().any(|player| {
-            self.get_hand(&player).iter().any(|card| {
+            self.get_hand(player).iter().any(|card| {
                 self.get_board().is_playable(card)
             })
         })
@@ -558,7 +558,7 @@ impl fmt::Display for GameState {
             for card in hand.iter() {
                 f.write_str(&format!("    {}", card))?;
             }
-            f.write_str(&"\n")?;
+            f.write_str("\n")?;
         }
         f.write_str("======\n")?;
         f.write_str("Board:\n")?;
