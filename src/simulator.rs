@@ -46,14 +46,14 @@ pub fn simulate_once(
 
 
         let choice = {
-            let mut strategy = strategies.get_mut(&player).unwrap();
+            let strategy = strategies.get_mut(&player).unwrap();
             strategy.decide(&game.get_view(player))
         };
 
         let turn = game.process_choice(choice);
 
         for player in game.get_players() {
-            let mut strategy = strategies.get_mut(&player).unwrap();
+            let strategy = strategies.get_mut(&player).unwrap();
             strategy.update(&turn, &game.get_view(player));
         }
 
