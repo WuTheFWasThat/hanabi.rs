@@ -143,7 +143,7 @@ impl PlayerStrategy for CheatingPlayerStrategy {
             view.board.is_playable(card)
         }).collect::<Vec<_>>();
 
-        if playable_cards.len() > 0 {
+        if !playable_cards.is_empty() {
             // play the best playable card
             // the higher the play_score, the better to play
             let mut index = 0;

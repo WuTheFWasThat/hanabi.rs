@@ -568,7 +568,7 @@ impl PublicInformation for MyPublicInformation {
                 if ask_dead { Box::new(q_is_dead(i)) }
                 else        { Box::new(q_is_playable(i)) }
             }).collect::<Vec<_>>();
-            if questions.len() > 0 {
+            if !questions.is_empty() {
                 return Some(Box::new(AdditiveComboQuestion { questions }))
             }
         }
@@ -737,7 +737,7 @@ impl InformationPlayerStrategy {
             h2.0.partial_cmp(&h1.0).unwrap_or(Ordering::Equal)
         });
 
-        if hint_options.len() == 0 {
+        if hint_options.is_empty() {
             // NOTE: Technically possible, but never happens
         } else if hint_options.len() > 1 {
             debug!("Choosing amongst hint options: {:?}", hint_options);
@@ -800,7 +800,7 @@ impl InformationPlayerStrategy {
                 (i, card_table, p)
             }).collect::<Vec<_>>();
 
-            if risky_playable_cards.len() > 0 {
+            if !risky_playable_cards.is_empty() {
                 risky_playable_cards.sort_by(|c1, c2| {
                     c2.2.partial_cmp(&c1.2).unwrap_or(Ordering::Equal)
                 });
@@ -818,7 +818,7 @@ impl InformationPlayerStrategy {
         // NOTE When changing this, make sure to keep the "discard" branch of update() up to date!
         let will_hint =
             if view.board.hints_remaining > 0 && public_info.someone_else_needs_hint(view) { true }
-            else if view.board.discard_size() <= discard_threshold && useless_indices.len() > 0 { false }
+            else if view.board.discard_size() <= discard_threshold && !useless_indices.is_empty() { false }
             // hinting is better than discarding dead cards
             // (probably because it stalls the deck-drawing).
             else if view.board.hints_remaining > 0 && view.someone_else_can_play() { true }
@@ -840,7 +840,7 @@ impl InformationPlayerStrategy {
         if public_useless_indices.len() > 1 {
             let info = public_info.get_hat_sum(public_useless_indices.len() as u32, view);
             return TurnChoice::Discard(public_useless_indices[info.value as usize]);
-        } else if useless_indices.len() > 0 {
+        } else if !useless_indices.is_empty() {
             // TODO: have opponents infer that i knew a card was useless
             // TODO: after that, potentially prefer useless indices that arent public
             return TurnChoice::Discard(useless_indices[0]);
