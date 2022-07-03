@@ -650,10 +650,8 @@ impl InformationPlayerStrategy {
         let mut num_with = 1;
         if view.board.deck_size > 0 {
             for player in view.board.get_players() {
-                if player != self.me {
-                    if view.has_card(&player, card) {
-                        num_with += 1;
-                    }
+                if player != self.me && view.has_card(&player, card) {
+                    num_with += 1;
                 }
             }
         }
@@ -667,15 +665,13 @@ impl InformationPlayerStrategy {
         for (i, card_table) in hand.iter().enumerate() {
             if card_table.probability_is_dead(board) == 1.0 {
                 useless.insert(i);
-            } else {
-                if let Some(card) = card_table.get_card() {
-                    if seen.contains_key(&card) {
-                        // found a duplicate card
-                        useless.insert(i);
-                        useless.insert(*seen.get(&card).unwrap());
-                    } else {
-                        seen.insert(card, i);
-                    }
+            } else if let Some(card) = card_table.get_card() {
+                if seen.contains_key(&card) {
+                    // found a duplicate card
+                    useless.insert(i);
+                    useless.insert(*seen.get(&card).unwrap());
+                } else {
+                    seen.insert(card, i);
                 }
             }
         }
@@ -746,10 +742,8 @@ impl InformationPlayerStrategy {
 
         if hint_options.len() == 0 {
             // NOTE: Technically possible, but never happens
-        } else {
-            if hint_options.len() > 1 {
-                debug!("Choosing amongst hint options: {:?}", hint_options);
-            }
+        } else if hint_options.len() > 1 {
+            debug!("Choosing amongst hint options: {:?}", hint_options);
         }
         hint_options.remove(0).1
     }

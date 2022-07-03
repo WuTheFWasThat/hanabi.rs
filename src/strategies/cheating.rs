@@ -104,13 +104,11 @@ impl CheatingPlayerStrategy {
         let my_hand_value = self.hand_play_value(view, my_hand);
 
         for player in view.board.get_players() {
-            if player != self.me {
-                if view.has_card(&player, card) {
-                    let their_hand_value = self.hand_play_value(view, hands.get(&player).unwrap());
-                    // they can play this card, and have less urgent plays than i do
-                    if their_hand_value < my_hand_value {
-                        return 10 - (card.value as i32)
-                    }
+            if player != self.me && view.has_card(&player, card) {
+                let their_hand_value = self.hand_play_value(view, hands.get(&player).unwrap());
+                // they can play this card, and have less urgent plays than i do
+                if their_hand_value < my_hand_value {
+                    return 10 - (card.value as i32)
                 }
             }
         }
@@ -178,10 +176,8 @@ impl PlayerStrategy for CheatingPlayerStrategy {
 
         // hinting is better than discarding dead cards
         // (probably because it stalls the deck-drawing).
-        if view.board.hints_remaining > 0 {
-            if view.someone_else_can_play() {
-                return self.throwaway_hint(view);
-            }
+        if view.board.hints_remaining > 0 && view.someone_else_can_play() {
+            return self.throwaway_hint(view);
         }
 
         // if anything is totally useless, discard it
