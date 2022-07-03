@@ -33,7 +33,7 @@ pub trait CardInfo {
     // get probability weight for the card
     #[allow(unused_variables)]
     fn get_weight(&self, card: &Card) -> f32 {
-        1 as f32
+        1.
     }
 
     fn get_weighted_possibilities(&self) -> Vec<(Card, f32)> {
