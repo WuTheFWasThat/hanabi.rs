@@ -5,8 +5,7 @@ Despite relatively [simple rules](https://boardgamegeek.com/article/10670613#106
 the space of Hanabi strategies is quite interesting.
 This project provides a framework for implementing Hanabi strategies in Rust, and also implements extremely strong strategies.
 
-The best strategy is based on the "information strategy" from
-[this paper](https://d0474d97-a-62cb3a1a-s-sites.googlegroups.com/site/rmgpgrwc/research-papers/Hanabi_final.pdf).  See results ([below](#results)).
+The best strategy is based on the "information strategy" from the paper ["How to Make the Perfect Fireworks Display" by Cox et al]([How to Make the Perfect Fireworks Display](https://www.jstor.org/stable/10.4169/math.mag.88.5.323)).  See results ([below](#results)).
 It held state-of-the-art results (from March 2016) until December 2019, when [researchers at Facebook](https://arxiv.org/abs/1912.02318) surpassed it by extending the idea further with explicit search.
 
 Please feel free to contact me about Hanabi strategies, or this framework.
