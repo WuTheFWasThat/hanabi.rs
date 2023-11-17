@@ -78,5 +78,5 @@ Most similar projects I am aware of:
 - https://github.com/Quuxplusone/Hanabi
 
 Some researchers are trying to solve Hanabi using machine learning techniques:
-- [Initial paper](https://arxiv.org/abs/1902.00506) from DeepMind and Google Brain researchers. See [this Wall Street Journal coverage](https://www.wsj.com/articles/why-the-card-game-hanabi-is-the-next-big-hurdle-for-artificial-intelligence-11553875351)
+- [Initial paper](https://www.sciencedirect.com/science/article/pii/S0004370219300116) from DeepMind and Google Brain researchers. See [this Wall Street Journal coverage](https://www.wsj.com/articles/why-the-card-game-hanabi-is-the-next-big-hurdle-for-artificial-intelligence-11553875351)
 - [This paper](https://arxiv.org/abs/1912.02318) from Facebook, code at https://github.com/facebookresearch/Hanabi_SPARTA which includes their machine-learned agent
